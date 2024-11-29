@@ -9,6 +9,12 @@ int main() {
   std::cout << "$ ";
   std::string input;
   std::getline(std::cin, input);
+  if(input.substr(0,4)=="echo") {
+    if(input.length()>5 && input[4]==" ")
+	std::cout<<input.substr(5);
+    else
+	std::cout<<"\n";
+  }
   if(input=="exit 0") exit(0);
   std::cout<<input<<": command not found\n";
   }
