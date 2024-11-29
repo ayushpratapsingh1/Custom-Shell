@@ -10,7 +10,7 @@ int main() {
   std::string input;
   std::getline(std::cin, input);
   if(input.substr(0,4)=="echo") {
-    if(input.length()>5 && input[4]==" ")
+    if(input.length()>5 && input[4]==' ')
 	std::cout<<input.substr(5);
     else
 	std::cout<<"\n";
