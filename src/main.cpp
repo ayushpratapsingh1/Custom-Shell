@@ -14,6 +14,7 @@ int main() {
 	std::cout<<input.substr(5);
     else
 	std::cout<<"\n";
+    continue;
   }
   if(input=="exit 0") exit(0);
   std::cout<<input<<": command not found\n";
