@@ -21,7 +21,7 @@ int main() {
 	if(input.substr(5)=="echo" || input.substr(5)=="type" || input.substr(5)=="exit")
 	   std::cout<<input.substr(5)<<" is a shell builtin\n";
     else
-	std::input.substr(5) <<": not found\n";
+	std::cout<<input.substr(5) <<": not found\n";
     continue;
   }
   if(input=="exit 0") exit(0);
