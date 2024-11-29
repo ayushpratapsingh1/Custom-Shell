@@ -9,5 +9,5 @@ int main() {
   std::cout << "$ ";
   std::string input;
   std::getline(std::cin, input);
-  std::cout<<input<<": command not found"<<endl;
+  std::cout<<input<<": command not found\n";
 }
