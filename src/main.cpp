@@ -16,6 +16,14 @@ int main() {
 	std::cout<<"\n";
     continue;
   }
+  if(input.substr(0,4)=="type") {
+    if(input.length()>5 && input[4]==' ')
+	if(input.substr(5)=="echo" || input.substr(5)=="type" || input.substr(5)=="exit")
+	   std::cout<<input.substr(5)<<" is a shell builtin\n";
+    else
+	std::input.substr(5) <<": not found\n";
+    continue;
+  }
   if(input=="exit 0") exit(0);
   std::cout<<input<<": command not found\n";
   }
