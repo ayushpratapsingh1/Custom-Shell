@@ -11,7 +11,7 @@ int main() {
   std::getline(std::cin, input);
   if(input.substr(0,4)=="echo") {
     if(input.length()>5 && input[4]==' ')
-	std::cout<<input.substr(5);
+	std::cout<<input.substr(5)<<"\n";
     else
 	std::cout<<"\n";
     continue;
