@@ -1,74 +1,68 @@
 #include <iostream>
-#include <string>
-#include <sstream>
-#include <filesystem>
 #include <cstdlib>
-
+#include <sstream>
+#include <vector>
+#include <fstream>
 using namespace std;
-
-std::string get_path(std::string command) {
-    // Get PATH environment variable
-    const char* path_env = std::getenv("PATH");
-    if (!path_env) {
-        return "";  // Return empty if PATH is not set
+std::vector<std::string> split_string(const std::string &s, char delimiter) {
+    std::stringstream ss(s);
+    std::vector<std::string> tokens;
+    std::string token;
+    while (std::getline(ss, token, delimiter)) {
+        tokens.push_back(token);
     }
+    return tokens;
+}
 
-    std::stringstream ss(path_env);
-    std::string path;
-    while (std::getline(ss, path, ':')) {
-        // Check for the existence of the command in the path directories
-        std::string abs_path = path + "/" + command;
-        if (std::filesystem::exists(abs_path) && std::filesystem::is_regular_file(abs_path)) {
-            return abs_path;
+void handle_type_command(const std::vector<std::string> &args, const std::vector<std::string> &path) {
+    if (args[1] == "echo" || args[1] == "exit" || args[1] == "type") {
+        std::cout << args[1] << " is a shell builtin\n";
+        return;
+    }
+    for (const auto &dir : path) {
+        std::string filepath = dir + '/' + args[1];
+        if (std::ifstream(filepath).good()) {
+            std::cout << args[1] << " is " << filepath << "\n";
+            return;
         }
     }
-    return "";
+    std::cout << args[1] << ": not found\n";
 }
 
 int main() {
-    // Flush after every std::cout / std::cerr
-    std::cout << std::unitbuf;
-    std::cerr << std::unitbuf;
+    std::cout << std::unitbuf; // Enable automatic flushing
+    std::string path_string = std::getenv("PATH");
+    std::vector<std::string> path = split_string(path_string, ':');
 
     while (true) {
-        // Prompt user for input
         std::cout << "$ ";
         std::string input;
         std::getline(std::cin, input);
+        if (input.empty()) continue;
 
-        if (input.substr(0, 4) == "echo") {
-            if (input.length() > 5 && input[4] == ' ')
-                std::cout << input.substr(5) << "\n";
-            else
-                std::cout << "\n";
-            continue;
-        }
+        std::vector<std::string> args = split_string(input, ' ');
 
-        if (input.substr(0, 4) == "type") {
-            if (input.length() > 5 && input[4] == ' ') {
-                std::string cmd = input.substr(5);
-                // Check if the command is a shell builtin
-                if (cmd == "echo" || cmd == "type" || cmd == "exit") {
-                    std::cout << cmd << " is a shell builtin\n";
-                } else {
-                    // Check if the command exists in PATH
-                    std::string path = get_path(cmd);
-                    if (path.empty()) {
-                        std::cout << cmd << ": not found\n";
-                    } else {
-                        std::cout << cmd << " is " << path << "\n";
-                    }
-                }
-            } else {
-                std::cout << ": not found\n";  // Handle the case with no command after 'type'
+        if (args[0] == "exit" && args.size() > 1 && args[1] == "0") break;
+
+        if (args[0] == "echo") {
+            for (size_t i = 1; i < args.size(); ++i) {
+                std::cout << args[i] << (i == args.size() - 1 ? "\n" : " ");
             }
-            continue;
+        } else if (args[0] == "type" && args.size() > 1) {
+            handle_type_command(args, path);
+        } else {
+            for (const auto &dir : path) {
+                std::string filepath = dir + '/' + args[0];
+                if (std::ifstream(filepath).good()) {
+                    std::string command = filepath + input.substr(args[0].length());
+                    std::system(command.c_str());
+                    goto next_command;
+                }
+            }
+            std::cout << args[0] << ": command not found\n";
         }
-
-        if (input == "exit 0") {
-            exit(0);  // Exit the program
-        }
-
-        std::cout << input << ": command not found\n";  // Handle other unknown commands
+    next_command:;
     }
+
+    return 0;
 }
