@@ -3,6 +3,7 @@
 #include <sstream>
 #include <vector>
 #include <fstream>
+#include <filesystem>
 using namespace std;
 std::vector<std::string> split_string(const std::string &s, char delimiter) {
     std::stringstream ss(s);
@@ -48,6 +49,10 @@ int main() {
             for (size_t i = 1; i < args.size(); ++i) {
                 std::cout << args[i] << (i == args.size() - 1 ? "\n" : " ");
             }
+        } else if(command == "pwd"){
+            std::string cwd = std::filesystem::current_path();
+            std::string print_cwd = cwd.substr(0, cwd.length());
+            std::cout << print_cwd << "\n";
         } else if (args[0] == "type" && args.size() > 1) {
             handle_type_command(args, path);
         } else {
