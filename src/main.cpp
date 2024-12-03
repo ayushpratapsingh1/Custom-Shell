@@ -49,7 +49,7 @@ int main() {
             for (size_t i = 1; i < args.size(); ++i) {
                 std::cout << args[i] << (i == args.size() - 1 ? "\n" : " ");
             }
-        } else if(command == "pwd"){
+        } else if(args[0] == "pwd"){
             std::string cwd = std::filesystem::current_path();
             std::string print_cwd = cwd.substr(0, cwd.length());
             std::cout << print_cwd << "\n";
