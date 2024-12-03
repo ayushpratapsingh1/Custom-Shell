@@ -16,7 +16,7 @@ std::vector<std::string> split_string(const std::string &s, char delimiter) {
 }
 
 void handle_type_command(const std::vector<std::string> &args, const std::vector<std::string> &path) {
-    if (args[1] == "echo" || args[1] == "exit" || args[1] == "type") {
+    if (args[1] == "echo" || args[1] == "exit" || args[1] == "type" || args[1] == "pwd") {
         std::cout << args[1] << " is a shell builtin\n";
         return;
     }
