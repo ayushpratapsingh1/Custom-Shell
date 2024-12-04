@@ -32,11 +32,11 @@ std::vector<std::string> split_string(const std::string &s, char delimiter) {
 
         if (c == '\'' && !in_double_quote) {
             in_single_quote = !in_single_quote;
-            current_token += c;
+            current_token += c;  // Preserve quotes
         }
         else if (c == '"' && !in_single_quote) {
             in_double_quote = !in_double_quote;
-            current_token += c;
+            current_token += c;  // Preserve quotes
         }
         else if (c == delimiter && !in_single_quote && !in_double_quote) {
             if (!current_token.empty()) {
@@ -55,6 +55,7 @@ std::vector<std::string> split_string(const std::string &s, char delimiter) {
 
     return tokens;
 }
+
 
 
 void handleCd(const std::string& argument) {
@@ -113,9 +114,11 @@ int main() {
         if (args[0] == "exit" && args.size() > 1 && args[1] == "0") break;
 
         if (args[0] == "echo") {
-            for (size_t i = 1; i < args.size(); ++ i) {
-                std::cout << args[i] << (i == args.size() - 1 ? "\n" : " ");
+            for (size_t i = 1; i < args.size(); ++i) {
+                std::cout << args[i] << (i == args.size() - 1 ? "" : " ");
             }
+            std::cout << "\n";
+            continue;
         } else if (args[0] == "pwd") {
             std::cout << WORKING_DIR << "\n";
         } else if (args[0] == "cd" && args.size() > 1) {
