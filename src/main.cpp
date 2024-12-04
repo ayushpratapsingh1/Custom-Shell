@@ -12,22 +12,44 @@ std::string WORKING_DIR = std::filesystem::current_path().string();
 std::vector<std::string> split_string(const std::string &s) {
     std::vector<std::string> tokens;
     std::string token;
-    bool in_quotes = false;
+    bool in_single_quotes = false;
+    bool in_double_quotes = false;
 
     for (size_t i = 0; i < s.length(); ++i) {
         char c = s[i];
 
-        if (c == '\'') {
-            in_quotes = !in_quotes; // Toggle the in_quotes flag
-            if (!in_quotes) {
-                // If we just closed a quote, add the token
+        if (c == '\'' && !in_double_quotes) {
+            in_single_quotes = !in_single_quotes; // Toggle single quotes
+            if (!in_single_quotes) {
                 tokens.push_back(token);
                 token.clear();
             }
             continue;
         }
 
-        if (c == ' ' && !in_quotes) {
+        if (c == '\"' && !in_single_quotes) {
+            in_double_quotes = !in_double_quotes; // Toggle double quotes
+            if (!in_double_quotes) {
+                tokens.push_back(token);
+                token.clear();
+            }
+            continue;
+        }
+
+        if (c == '\\') {
+            if (in_double_quotes) {
+                // If in double quotes, escape the next character
+                if (i + 1 < s.length()) {
+                    token += s[++i]; // Add the escaped character
+                }
+            } else {
+                // If outside quotes, treat backslash as a regular character
+                token += c;
+            }
+            continue;
+        }
+
+        if (c == ' ' && !in_single_quotes && !in_double_quotes) {
             if (!token.empty()) {
                 tokens.push_back(token);
                 token.clear();
@@ -94,7 +116,7 @@ int main() {
         std::getline(std::cin, input);
         if (input.empty()) continue;
 
-        std::vector<std::string> args = split_string(input);
+        std:: vector<std::string> args = split_string(input);
 
         if (args.empty()) continue;
 
@@ -111,17 +133,15 @@ int main() {
         } else if (args[0] == "type" && args.size() > 1) {
             handle_type_command(args, path);
         } else {
-            for (const auto &dir : path) {
-                std::string filepath = dir + '/' + args[0];
-                if (std::ifstream(filepath).good()) {
-                    std::string command = filepath + input.substr(args[0].length());
-                    std::system(command.c_str());
-                    goto next_command;
-                }
+            std::string command = args[0];
+            for (size_t i = 1; i < args.size(); ++i) {
+                command += " " + args[i]; // Rebuild the command with arguments
             }
-            std::cout << args[0] << ": command not found\n";
+            int result = std::system(command.c_str()); // Execute the command
+            if (result == -1) {
+                std::cout << command << ": command not found\n";
+            }
         }
-    next_command:;
     }
 
     return 0;
