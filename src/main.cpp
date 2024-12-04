@@ -20,7 +20,21 @@ std::vector<std::string> split_string(const std::string &s, char delimiter) {
 }
 
 void handleCd(const std::string& argument) {
-    std::filesystem::path new_path = argument[0] == '/' ? argument : WORKING_DIR + '/' + argument;
+    std::filesystem::path new_path;
+
+    if (argument == "~") {
+        // Change to the user's home directory
+        const char* home = std::getenv("HOME");
+        if (home) {
+            new_path = home;
+        } else {
+            std::cout << "HOME environment variable is not set.\n";
+            return;
+        }
+    } else {
+        // Handle absolute and relative paths
+        new_path = argument[0] == '/' ? argument : WORKING_DIR + '/' + argument;
+    }
 
     if (std::filesystem::exists(new_path) && std::filesystem::is_directory(new_path)) {
         std::filesystem::current_path(new_path);
@@ -29,6 +43,7 @@ void handleCd(const std::string& argument) {
         std::cout << argument << ": No such file or directory\n";
     }
 }
+
 
 void handle_type_command(const std::vector<std::string> &args, const std::vector<std::string> &path) {
     if (args[1] == "echo" || args[1] == "exit" || args[1] == "type" || args[1] == "pwd") {
