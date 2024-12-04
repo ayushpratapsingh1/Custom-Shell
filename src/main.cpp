@@ -20,9 +20,14 @@ std::vector<std::string> split_string(const std::string &s, char delimiter) {
         char c = s[i];
 
         if (escape_next) {
-            // Preserve the backslash and the escaped character
-            current_token += '\\';
-            current_token += c;
+            if (c == ' ') {
+                // Replace escaped space with actual space
+                current_token += ' ';
+            } else {
+                // Preserve backslash for other escaped characters
+                current_token += '\\';
+                current_token += c;
+            }
             escape_next = false;
             continue;
         }
