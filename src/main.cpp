@@ -5,6 +5,7 @@
 #include <fstream>
 #include <filesystem>
 using namespace std;
+std::string WORKING_DIR = std::filesystem::current_path().string();
 std::vector<std::string> split_string(const std::string &s, char delimiter) {
     std::stringstream ss(s);
     std::vector<std::string> tokens;
@@ -14,7 +15,12 @@ std::vector<std::string> split_string(const std::string &s, char delimiter) {
     }
     return tokens;
 }
-
+void handleCd(const std::string& argument) {
+    if (argument[0] == '/' && std::filesystem::exists(argument))
+        WORKING_DIR = argument;
+    else
+        std::cout << argument << ": No such file or directory\n";
+}
 void handle_type_command(const std::vector<std::string> &args, const std::vector<std::string> &path) {
     if (args[1] == "echo" || args[1] == "exit" || args[1] == "type" || args[1] == "pwd") {
         std::cout << args[1] << " is a shell builtin\n";
@@ -53,6 +59,8 @@ int main() {
             std::string cwd = std::filesystem::current_path();
             std::string print_cwd = cwd.substr(0, cwd.length());
             std::cout << print_cwd << "\n";
+        } else if (args[0] == "cd" && args.size() > 1) {
+            handleCd(args[1]); 
         } else if (args[0] == "type" && args.size() > 1) {
             handle_type_command(args, path);
         } else {
