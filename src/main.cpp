@@ -14,16 +14,36 @@ std::vector<std::string> split_string(const std::string &s, char delimiter) {
     std::string current_token;
     bool in_single_quote = false;
     bool in_double_quote = false;
+    bool escape_next = false;
 
-    for (char c : s) {
+    for (size_t i = 0; i < s.length(); ++i) {
+        char c = s[i];
+
+        if (escape_next) {
+            // Escaped character always added to current token
+            current_token += c;
+            escape_next = false;
+            continue;
+        }
+
+        if (c == '\\') {
+            if (in_single_quote) {
+                // Backslash is literal in single quotes
+                current_token += c;
+            } else {
+                // Outside quotes or in double quotes, prepare to escape next char
+                escape_next = true;
+            }
+            continue;
+        }
+
         if (c == '\'' && !in_double_quote) {
             // Toggle single quote mode
             in_single_quote = !in_single_quote;
-            
-            // Only add quote delimiter if not first/last character
-            if (!current_token.empty() && in_single_quote) {
-                current_token += c;
-            }
+        }
+        else if (c == '"' && !in_single_quote) {
+            // Toggle double quote mode
+            in_double_quote = !in_double_quote;
         }
         else if (c == delimiter && !in_single_quote && !in_double_quote) {
             // Split only when not in quotes
@@ -31,11 +51,11 @@ std::vector<std::string> split_string(const std::string &s, char delimiter) {
                 tokens.push_back(current_token);
                 current_token.clear();
             }
+            continue;
         }
-        else {
-            // Always add character when in quotes or not a delimiter
-            current_token += c;
-        }
+
+        // Always add character when in quotes or not a delimiter
+        current_token += c;
     }
 
     // Add last token
@@ -45,13 +65,17 @@ std::vector<std::string> split_string(const std::string &s, char delimiter) {
 
     // Remove quotes from tokens
     for (auto &token : tokens) {
-        if (!token.empty() && token.front() == '\'' && token.back() == '\'') {
-            token = token.substr(1, token.length() - 2);
+        if (!token.empty()) {
+            if ((token.front() == '\'' && token.back() == '\'') || 
+                (token.front() == '"' && token.back() == '"')) {
+                token = token.substr(1, token.length() - 2);
+            }
         }
     }
 
     return tokens;
 }
+
 
 void handleCd(const std::string& argument) {
     std::filesystem::path new_path;
@@ -95,7 +119,7 @@ void handle_type_command(const std::vector<std::string> &args, const std::vector
 }
 
 int main() {
-    std::cout << std::unitbuf; // Enable automatic flushing
+    std::cout << std::unitbuf;
     std::string path_string = std::getenv("PATH");
     std::vector<std::string> path = split_string(path_string, ':');
 
@@ -114,21 +138,25 @@ int main() {
                 std::cout << args[i] << (i == args.size() - 1 ? "\n" : " ");
             }
         } else if (args[0] == "pwd") {
-            std::cout << WORKING_DIR << "\n"; // Use WORKING_DIR to print the current directory
+            std::cout << WORKING_DIR << "\n";
         } else if (args[0] == "cd" && args.size() > 1) {
             handleCd(args[1]);
         } else if (args[0] == "type" && args.size() > 1) {
             handle_type_command(args, path);
         } else {
+            // Check if first token is a quoted executable
+            std::string executable = args[0];
+            
             for (const auto &dir : path) {
-                std::string filepath = dir + '/' + args[0];
+                std::string filepath = dir + '/' + executable;
                 if (std::ifstream(filepath).good()) {
-                    std::string command = filepath + input.substr(args[0].length());
+                    // Reconstruct command with original spaces and quotes
+                    std::string command = filepath + input.substr(executable.length());
                     std::system(command.c_str());
                     goto next_command;
                 }
             }
-            std::cout << args[0] << ": command not found\n";
+            std::cout << executable << ": command not found\n";
         }
     next_command:;
     }
