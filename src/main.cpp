@@ -9,91 +9,71 @@ using namespace std;
 
 std::string WORKING_DIR = std::filesystem::current_path().string();
 
-enum class State {
-    Normal,
-    Single,
-    Double
-};
-
-std::vector<std::string> split_string(const std::string &s) {
+std::vector<std::string> split_string(const std::string &s, char delimiter) {
     std::vector<std::string> tokens;
     std::string current_token;
-    bool in_escape = false;
-    State state = State::Normal;
+    bool in_single_quote = false;
+    bool in_double_quote = false;
+    bool escape_next = false;
 
-    for (char c : s) {
-        switch (state) {
-            case State::Normal:
-                if (in_escape) {
-                    current_token += c; // Add the escaped character
-                    in_escape = false;
-                } else if (c == '\\') {
-                    in_escape = true; // Prepare to escape the next character
-                } else if (c == '\'') {
-                    state = State::Single; // Enter single quote mode
-                } else if (c == '"') {
-                    state = State::Double; // Enter double quote mode
-                } else if (c == ' ') {
-                    if (!current_token.empty()) {
-                        tokens.push_back(current_token);
-                        current_token.clear();
-                    }
-                } else {
-                    current_token += c; // Add character to the current token
-                }
-                break;
+    for (size_t i = 0; i < s.length(); ++i) {
+        char c = s[i];
 
-            case State::Single:
-                if (in_escape) {
-                    current_token += c; // Add the escaped character
-                    in_escape = false;
-                } else if (c == '\\') {
-                    in_escape = true; // Prepare to escape the next character
-                } else if (c == '\'') {
-                    state = State::Normal; // Exit single quote mode
-                } else {
-                    current_token += c; // Add character to the current token
-                }
-                break;
+        if (escape_next) {
+            // Always append the escaped character to the current token
+            current_token += c;
+            escape_next = false;
+            continue;
+        }
 
-            case State::Double:
-                if (in_escape) {
-                    if (c != '$' && c != '`' && c != '"' && c != '\\' && c != '\n') {
-                        current_token += '\\'; // Preserve backslash for other escaped characters
-                    }
-                    current_token += c; // Add the escaped character
-                    in_escape = false;
-                } else if (c == '\\') {
-                    in_escape = true; // Prepare to escape the next character
-                } else if (c == '"') {
-                    state = State::Normal; // Exit double quote mode
-                } else {
-                    current_token += c; // Add character to the current token
-                }
-                break;
+        if (c == '\\') {
+            escape_next = true; // Mark the next character for escaping
+            continue;
+        }
+
+        if (c == '\'' && !in_double_quote) {
+            in_single_quote = !in_single_quote;
+            current_token += c;
+        }
+        else if (c == '"' && !in_single_quote) {
+            in_double_quote = !in_double_quote;
+            current_token += c;
+        }
+        else if (c == delimiter && !in_single_quote && !in_double_quote) {
+            if (!current_token.empty()) {
+                tokens.push_back(current_token);
+                current_token.clear();
+            }
+        }
+        else {
+            current_token += c; // Add regular character to the current token
         }
     }
 
-    // Add the last token if it exists
     if (!current_token.empty()) {
         tokens.push_back(current_token);
     }
 
-    // Check for unclosed quotes
-    if (state == State::Single) {
-        throw std::runtime_error("Un-terminated single quotation");
-    }
-    if (state == State::Double) {
-        throw std::runtime_error("Un-terminated double quotation");
+    // Remove enclosing quotes if present
+    for (auto &token : tokens) {
+        if (!token.empty()) {
+            if ((token.front() == '\'' && token.back() == '\'') || 
+                (token.front() == '"' && token.back() == '"')) {
+                token = token.substr(1, token.length() - 2);
+            }
+        }
     }
 
     return tokens;
 }
 
+
+
 void handleCd(const std::string& argument) {
     std::filesystem::path new_path;
 
     if (argument == "~") {
+        // Change to the user's home directory
         const char* home = std::getenv("HOME");
         if (home) {
             new_path = home;
@@ -102,12 +82,13 @@ void handleCd(const std::string& argument) {
             return;
         }
     } else {
+        // Handle absolute and relative paths
         new_path = argument[0] == '/' ? argument : WORKING_DIR + '/' + argument;
     }
 
     if (std::filesystem::exists(new_path) && std::filesystem::is_directory(new_path)) {
         std::filesystem::current_path(new_path);
-        WORKING_DIR = std::filesystem::current_path().string();
+        WORKING_DIR = std::filesystem::current_path().string(); // Update the working directory variable
     } else {
         std::cout << argument << ": No such file or directory\n";
     }
@@ -116,7 +97,8 @@ void handleCd(const std::string& argument) {
 void handle_type_command(const std::vector<std::string> &args, const std::vector<std::string> &path) {
     if (args[1] == "echo" || args[1] == "exit" || args[1] == "type" || args[1] == "pwd") {
         std::cout << args[1] << " is a shell builtin\n";
-        return; }
+        return;
+    }
     for (const auto &dir : path) {
         std::string filepath = dir + '/' + args[1];
         if (std::ifstream(filepath).good()) {
@@ -130,7 +112,7 @@ void handle_type_command(const std::vector<std::string> &args, const std::vector
 int main() {
     std::cout << std::unitbuf;
     std::string path_string = std::getenv("PATH");
-    std::vector<std::string> path = split_string(path_string);
+    std::vector<std::string> path = split_string(path_string, ':');
 
     while (true) {
         std::cout << "$ ";
@@ -138,12 +120,12 @@ int main() {
         std::getline(std::cin, input);
         if (input.empty()) continue;
 
-        std::vector<std::string> args = split_string(input);
+        std::vector<std::string> args = split_string(input, ' ');
 
         if (args[0] == "exit" && args.size() > 1 && args[1] == "0") break;
 
         if (args[0] == "echo") {
-            for (size_t i = 1; i < args.size(); ++i) {
+            for (size_t i = 1; i < args.size(); ++ i) {
                 std::cout << args[i] << (i == args.size() - 1 ? "\n" : " ");
             }
         } else if (args[0] == "pwd") {
@@ -153,11 +135,13 @@ int main() {
         } else if (args[0] == "type" && args.size() > 1) {
             handle_type_command(args, path);
         } else {
+            // Check if first token is a quoted executable
             std::string executable = args[0];
             
             for (const auto &dir : path) {
                 std::string filepath = dir + '/' + executable;
                 if (std::ifstream(filepath).good()) {
+                    // Reconstruct command with original spaces and quotes
                     std::string command = filepath + input.substr(executable.length());
                     std::system(command.c_str());
                     goto next_command;
