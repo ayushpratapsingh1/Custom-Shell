@@ -20,38 +20,27 @@ std::vector<std::string> split_string(const std::string &s, char delimiter) {
         char c = s[i];
 
         if (escape_next) {
-            if (c == ' ') {
-                // Replace escaped space with actual space
-                current_token += ' ';
-            } else {
-                // Preserve backslash for other escaped characters
-                current_token += '\\';
-                current_token += c;
-            }
+            // Always add the escaped character
+            current_token += c;
             escape_next = false;
             continue;
         }
 
         if (c == '\\') {
-            if (in_single_quote) {
-                // Backslash is literal in single quotes
-                current_token += c;
-            } else {
-                // Outside quotes or in double quotes, prepare to escape next char
-                escape_next = true;
-            }
+            // Prepare to escape the next character
+            escape_next = true;
             continue;
         }
 
         if (c == '\'' && !in_double_quote) {
             // Toggle single quote mode
             in_single_quote = !in_single_quote;
-            current_token += c;
+            continue;
         }
         else if (c == '"' && !in_single_quote) {
             // Toggle double quote mode
             in_double_quote = !in_double_quote;
-            current_token += c;
+            continue;
         }
         else if (c == delimiter && !in_single_quote && !in_double_quote) {
             // Split only when not in quotes
@@ -70,16 +59,6 @@ std::vector<std::string> split_string(const std::string &s, char delimiter) {
     // Add last token
     if (!current_token.empty()) {
         tokens.push_back(current_token);
-    }
-
-    // Only remove quotes if they fully enclose the token
-    for (auto &token : tokens) {
-        if (!token.empty()) {
-            if ((token.front() == '\'' && token.back() == '\'') || 
-                (token.front() == '"' && token.back() == '"')) {
-                token = token.substr(1, token.length() - 2);
-            }
-        }
     }
 
     return tokens;
