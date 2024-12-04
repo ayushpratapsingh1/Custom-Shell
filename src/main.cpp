@@ -9,13 +9,39 @@ using namespace std;
 
 std::string WORKING_DIR = std::filesystem::current_path().string();
 
-std::vector<std::string> split_string(const std::string &s, char delimiter) {
-    std::stringstream ss(s);
+std::vector<std::string> split_string(const std::string &s) {
     std::vector<std::string> tokens;
     std::string token;
-    while (std::getline(ss, token, delimiter)) {
+    bool in_quotes = false;
+
+    for (size_t i = 0; i < s.length(); ++i) {
+        char c = s[i];
+
+        if (c == '\'') {
+            in_quotes = !in_quotes; // Toggle the in_quotes flag
+            if (!in_quotes) {
+                // If we just closed a quote, add the token
+                tokens.push_back(token);
+                token.clear();
+            }
+            continue;
+        }
+
+        if (c == ' ' && !in_quotes) {
+            if (!token.empty()) {
+                tokens.push_back(token);
+                token.clear();
+            }
+        } else {
+            token += c; // Add character to the current token
+        }
+    }
+
+    // Add the last token if it exists
+    if (!token.empty()) {
         tokens.push_back(token);
     }
+
     return tokens;
 }
 
@@ -23,7 +49,6 @@ void handleCd(const std::string& argument) {
     std::filesystem::path new_path;
 
     if (argument == "~") {
-        // Change to the user's home directory
         const char* home = std::getenv("HOME");
         if (home) {
             new_path = home;
@@ -32,18 +57,16 @@ void handleCd(const std::string& argument) {
             return;
         }
     } else {
-        // Handle absolute and relative paths
         new_path = argument[0] == '/' ? argument : WORKING_DIR + '/' + argument;
     }
 
     if (std::filesystem::exists(new_path) && std::filesystem::is_directory(new_path)) {
         std::filesystem::current_path(new_path);
-        WORKING_DIR = std::filesystem::current_path().string(); // Update the working directory variable
+        WORKING_DIR = std::filesystem::current_path().string();
     } else {
         std::cout << argument << ": No such file or directory\n";
     }
 }
-
 
 void handle_type_command(const std::vector<std::string> &args, const std::vector<std::string> &path) {
     if (args[1] == "echo" || args[1] == "exit" || args[1] == "type" || args[1] == "pwd") {
@@ -63,7 +86,7 @@ void handle_type_command(const std::vector<std::string> &args, const std::vector
 int main() {
     std::cout << std::unitbuf; // Enable automatic flushing
     std::string path_string = std::getenv("PATH");
-    std::vector<std::string> path = split_string(path_string, ':');
+    std::vector<std::string> path = split_string(path_string);
 
     while (true) {
         std::cout << "$ ";
@@ -71,7 +94,9 @@ int main() {
         std::getline(std::cin, input);
         if (input.empty()) continue;
 
-        std::vector<std::string> args = split_string(input, ' ');
+        std::vector<std::string> args = split_string(input);
+
+        if (args.empty()) continue;
 
         if (args[0] == "exit" && args.size() > 1 && args[1] == "0") break;
 
@@ -80,7 +105,7 @@ int main() {
                 std::cout << args[i] << (i == args.size() - 1 ? "\n" : " ");
             }
         } else if (args[0] == "pwd") {
-            std::cout << WORKING_DIR << "\n"; // Use WORKING_DIR to print the current directory
+            std::cout << WORKING_DIR << "\n";
         } else if (args[0] == "cd" && args.size() > 1) {
             handleCd(args[1]);
         } else if (args[0] == "type" && args.size() > 1) {
