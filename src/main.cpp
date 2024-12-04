@@ -20,42 +20,70 @@ std::vector<std::string> split_string(const std::string &s, char delimiter) {
         char c = s[i];
 
         if (escape_next) {
-            current_token += c;  // Add the escaped character as is
+            if (c == ' ') {
+                // Replace escaped space with actual space
+                current_token += ' ';
+            } else {
+                // Preserve backslash for other escaped characters
+                current_token += '\\';
+                current_token += c;
+            }
             escape_next = false;
             continue;
         }
 
         if (c == '\\') {
-            escape_next = true;  // Next character will be escaped
+            if (in_single_quote) {
+                // Backslash is literal in single quotes
+                current_token += c;
+            } else {
+                // Outside quotes or in double quotes, prepare to escape next char
+                escape_next = true;
+            }
             continue;
         }
 
         if (c == '\'' && !in_double_quote) {
+            // Toggle single quote mode
             in_single_quote = !in_single_quote;
-            current_token += c;  // Preserve quotes
+            current_token += c;
         }
         else if (c == '"' && !in_single_quote) {
+            // Toggle double quote mode
             in_double_quote = !in_double_quote;
-            current_token += c;  // Preserve quotes
+            current_token += c;
         }
         else if (c == delimiter && !in_single_quote && !in_double_quote) {
+            // Split only when not in quotes
             if (!current_token.empty()) {
                 tokens.push_back(current_token);
                 current_token.clear();
             }
+            continue;
         }
         else {
-            current_token += c;  // Add regular character to the current token
+            // Always add character when in quotes or not a delimiter
+            current_token += c;
         }
     }
 
+    // Add last token
     if (!current_token.empty()) {
         tokens.push_back(current_token);
     }
 
+    // Only remove quotes if they fully enclose the token
+    for (auto &token : tokens) {
+        if (!token.empty()) {
+            if ((token.front() == '\'' && token.back() == '\'') || 
+                (token.front() == '"' && token.back() == '"')) {
+                token = token.substr(1, token.length() - 2);
+            }
+        }
+    }
+
     return tokens;
 }
-
 
 
 void handleCd(const std::string& argument) {
@@ -82,6 +110,7 @@ void handleCd(const std::string& argument) {
         std::cout << argument << ": No such file or directory\n";
     }
 }
+
 
 void handle_type_command(const std::vector<std::string> &args, const std::vector<std::string> &path) {
     if (args[1] == "echo" || args[1] == "exit" || args[1] == "type" || args[1] == "pwd") {
@@ -115,10 +144,8 @@ int main() {
 
         if (args[0] == "echo") {
             for (size_t i = 1; i < args.size(); ++i) {
-                std::cout << args[i] << (i == args.size() - 1 ? "" : " ");
+                std::cout << args[i] << (i == args.size() - 1 ? "\n" : " ");
             }
-            std::cout << "\n";
-            continue;
         } else if (args[0] == "pwd") {
             std::cout << WORKING_DIR << "\n";
         } else if (args[0] == "cd" && args.size() > 1) {
