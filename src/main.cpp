@@ -116,7 +116,7 @@ void handleCd(const std::string& argument) {
 void handle_type_command(const std::vector<std::string> &args, const std::vector<std::string> &path) {
     if (args[1] == "echo" || args[1] == "exit" || args[1] == "type" || args[1] == "pwd") {
         std::cout << args[1] << " is a shell builtin\n";
-        return }
+        return; }
     for (const auto &dir : path) {
         std::string filepath = dir + '/' + args[1];
         if (std::ifstream(filepath).good()) {
