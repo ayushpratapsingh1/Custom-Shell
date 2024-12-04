@@ -4,6 +4,7 @@
 #include <vector>
 #include <fstream>
 #include <filesystem>
+#include <unistd.h> // For fork and exec
 
 using namespace std;
 
@@ -105,6 +106,32 @@ void handle_type_command(const std::vector<std::string> &args, const std::vector
     std::cout << args[1] << ": not found\n";
 }
 
+void execute_command(const std::vector<std::string>& args) {
+    pid_t pid = fork();
+    if (pid == 0) {
+        // Child process
+        std::vector <std::string> c_args;
+        for (const auto& arg : args) {
+            c_args.push_back(arg);
+        }
+        c_args.push_back(nullptr); // execvp requires a null-terminated array
+
+        execvp(c_args[0].c_str(), const_cast<char* const*>(c_args.data()));
+        // If execvp returns, it means there was an error
+        std::cerr << c_args[0] << ": command not found\n";
+        exit(1);
+    } else if (pid < 0) {
+        std::cerr << "Fork failed\n";
+    } else {
+        // Parent process
+        int status;
+        waitpid(pid, &status, 0);
+        if (WIFEXITED(status) && WEXITSTATUS(status) != 0) {
+            std::cerr << args[0] << ": execution failed with error code " << WEXITSTATUS(status) << "\n";
+        }
+    }
+}
+
 int main() {
     std::cout << std::unitbuf; // Enable automatic flushing
     std::string path_string = std::getenv("PATH");
@@ -120,7 +147,7 @@ int main() {
 
         if (args.empty()) continue;
 
-        if (args[0] == "exit" && args.size() >  1 && args[1] == "0") break;
+        if (args[0] == "exit" && args.size() > 1 && args[1] == "0") break;
 
         if (args[0] == "echo") {
             for (size_t i = 1; i < args.size(); ++i) {
@@ -133,16 +160,7 @@ int main() {
         } else if (args[0] == "type" && args.size() > 1) {
             handle_type_command(args, path);
         } else {
-            std::string command = args[0];
-            for (size_t i = 1; i < args.size(); ++i) {
-                command += " " + args[i]; // Rebuild the command with arguments
-            }
-            int result = std::system(command.c_str()); // Execute the command
-            if (result == -1) {
-                std::cout << command << ": command not found\n";
-            } else if (result != 0) {
-                std::cout << command << ": execution failed with error code " << result << "\n";
-            }
+            execute_command(args); // Execute the command
         }
     }
 
