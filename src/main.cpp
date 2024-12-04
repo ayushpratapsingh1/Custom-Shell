@@ -20,49 +20,52 @@ std::vector<std::string> split_string(const std::string &s, char delimiter) {
         char c = s[i];
 
         if (escape_next) {
-            // Add the next character literally
-            current_token += c;
+            current_token += c;  // Add the escaped character to the current token
             escape_next = false;
             continue;
         }
 
         if (c == '\\') {
-            // Prepare to escape the next character
-            escape_next = true;
+            escape_next = true;  // Mark that the next character should be escaped
             continue;
         }
 
         if (c == '\'' && !in_double_quote) {
-            // Toggle single quote mode
             in_single_quote = !in_single_quote;
-            continue;
+            current_token += c;
         }
         else if (c == '"' && !in_single_quote) {
-            // Toggle double quote mode
             in_double_quote = !in_double_quote;
-            continue;
+            current_token += c;
         }
         else if (c == delimiter && !in_single_quote && !in_double_quote) {
-            // Split only when not in quotes
             if (!current_token.empty()) {
                 tokens.push_back(current_token);
                 current_token.clear();
             }
-            continue;
         }
         else {
-            // Always add character when in quotes or not a delimiter
-            current_token += c;
+            current_token += c;  // Add character to the current token
         }
     }
 
-    // Add last token
     if (!current_token.empty()) {
         tokens.push_back(current_token);
     }
 
+    // Remove enclosing quotes if present
+    for (auto &token : tokens) {
+        if (!token.empty()) {
+            if ((token.front() == '\'' && token.back() == '\'') || 
+                (token.front() == '"' && token.back() == '"')) {
+                token = token.substr(1, token.length() - 2);
+            }
+        }
+    }
+
     return tokens;
 }
+
 
 void handleCd(const std::string& argument) {
     std::filesystem::path new_path;
