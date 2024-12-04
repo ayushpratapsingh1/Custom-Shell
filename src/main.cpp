@@ -116,11 +116,11 @@ int main() {
         std::getline(std::cin, input);
         if (input.empty()) continue;
 
-        std:: vector<std::string> args = split_string(input);
+        std::vector<std::string> args = split_string(input);
 
         if (args.empty()) continue;
 
-        if (args[0] == "exit" && args.size() > 1 && args[1] == "0") break;
+        if (args[0] == "exit" && args.size() >  1 && args[1] == "0") break;
 
         if (args[0] == "echo") {
             for (size_t i = 1; i < args.size(); ++i) {
@@ -140,6 +140,8 @@ int main() {
             int result = std::system(command.c_str()); // Execute the command
             if (result == -1) {
                 std::cout << command << ": command not found\n";
+            } else if (result != 0) {
+                std::cout << command << ": execution failed with error code " << result << "\n";
             }
         }
     }
