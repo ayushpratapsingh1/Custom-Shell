@@ -20,14 +20,13 @@ std::vector<std::string> split_string(const std::string &s, char delimiter) {
         char c = s[i];
 
         if (escape_next) {
-            // Always append the escaped character to the current token
-            current_token += c;
+            current_token += c;  // Add the escaped character as is
             escape_next = false;
             continue;
         }
 
         if (c == '\\') {
-            escape_next = true; // Mark the next character for escaping
+            escape_next = true;  // Next character will be escaped
             continue;
         }
 
@@ -46,7 +45,7 @@ std::vector<std::string> split_string(const std::string &s, char delimiter) {
             }
         }
         else {
-            current_token += c; // Add regular character to the current token
+            current_token += c;  // Add regular character to the current token
         }
     }
 
@@ -54,19 +53,8 @@ std::vector<std::string> split_string(const std::string &s, char delimiter) {
         tokens.push_back(current_token);
     }
 
-    // Remove enclosing quotes if present
-    for (auto &token : tokens) {
-        if (!token.empty()) {
-            if ((token.front() == '\'' && token.back() == '\'') || 
-                (token.front() == '"' && token.back() == '"')) {
-                token = token.substr(1, token.length() - 2);
-            }
-        }
-    }
-
     return tokens;
 }
-
 
 
 void handleCd(const std::string& argument) {
