@@ -15,7 +15,6 @@ std::vector<std::string> split_string(const std::string &s, char delimiter) {
     bool in_single_quote = false;
     bool in_double_quote = false;
     bool escape_next = false;
-    bool consecutive_quotes = false;
 
     for (size_t i = 0; i < s.length(); ++i) {
         char c = s[i];
@@ -54,9 +53,6 @@ std::vector<std::string> split_string(const std::string &s, char delimiter) {
         }
         else if (c == '"' && !in_single_quote) {
             // Toggle double quote mode
-            if (in_double_quote) {
-                consecutive_quotes = true;
-            }
             in_double_quote = !in_double_quote;
             current_token += c;
             continue;
@@ -66,7 +62,6 @@ std::vector<std::string> split_string(const std::string &s, char delimiter) {
             if (!current_token.empty()) {
                 tokens.push_back(current_token);
                 current_token.clear();
-                consecutive_quotes = false;
             }
             continue;
         }
