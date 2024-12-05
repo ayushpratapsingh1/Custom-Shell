@@ -15,6 +15,7 @@ std::vector<std::string> split_string(const std::string &s, char delimiter) {
     bool in_single_quote = false;
     bool in_double_quote = false;
     bool escape_next = false;
+    bool consecutive_quotes = false;
 
     for (size_t i = 0; i < s.length(); ++i) {
         char c = s[i];
@@ -53,6 +54,9 @@ std::vector<std::string> split_string(const std::string &s, char delimiter) {
         }
         else if (c == '"' && !in_single_quote) {
             // Toggle double quote mode
+            if (in_double_quote) {
+                consecutive_quotes = true;
+            }
             in_double_quote = !in_double_quote;
             current_token += c;
             continue;
@@ -62,6 +66,7 @@ std::vector<std::string> split_string(const std::string &s, char delimiter) {
             if (!current_token.empty()) {
                 tokens.push_back(current_token);
                 current_token.clear();
+                consecutive_quotes = false;
             }
             continue;
         }
@@ -145,13 +150,7 @@ int main() {
 
         if (args[0] == "echo") {
             for (size_t i = 1; i < args.size(); ++i) {
-                // Remove surrounding quotes if they exist
-                std::string arg = args[i];
-                if ((arg.front() == '"' && arg.back() == '"') || 
-                    (arg.front() == '\'' && arg.back() == '\'')) {
-                    arg = arg.substr(1, arg.length() - 2);
-                }
-                std::cout << arg << (i == args.size() - 1 ? "\n" : " ");
+                std::cout << args[i] << (i == args.size() - 1 ? "\n" : " ");
             }
         } else if (args[0] == "pwd") {
             std::cout << WORKING_DIR << "\n";
