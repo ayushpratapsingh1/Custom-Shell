@@ -54,10 +54,6 @@ std::vector<std::string> split_string(const std::string &s, char delimiter) {
         else if (c == '"' && !in_single_quote) {
             // Toggle double quote mode
             in_double_quote = !in_double_quote;
-            if (!in_double_quote) {
-                // When closing double quote, don't add the quote
-                continue;
-            }
             current_token += c;
             continue;
         }
