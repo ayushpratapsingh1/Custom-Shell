@@ -20,26 +20,31 @@ std::vector<std::string> split_string(const std::string &s, char delimiter) {
         char c = s[i];
 
         if (escape_next) {
-            // Always add the escaped character
+            // Always add the escaped character literally
             current_token += c;
             escape_next = false;
             continue;
         }
 
         if (c == '\\') {
-            // Prepare to escape the next character
+            // Prepare to escape the next character, even within quotes
             escape_next = true;
+            if (in_single_quote || in_double_quote) {
+                current_token += c;
+            }
             continue;
         }
 
         if (c == '\'' && !in_double_quote) {
             // Toggle single quote mode
             in_single_quote = !in_single_quote;
+            current_token += c;
             continue;
         }
         else if (c == '"' && !in_single_quote) {
             // Toggle double quote mode
             in_double_quote = !in_double_quote;
+            current_token += c;
             continue;
         }
         else if (c == delimiter && !in_single_quote && !in_double_quote) {
@@ -68,7 +73,6 @@ void handleCd(const std::string& argument) {
     std::filesystem::path new_path;
 
     if (argument == "~") {
-        // Change to the user's home directory
         const char* home = std::getenv("HOME");
         if (home) {
             new_path = home;
@@ -77,18 +81,21 @@ void handleCd(const std::string& argument) {
             return;
         }
     } else {
-        // Handle absolute and relative paths
+        // Handle absolute and relative paths, preserving backslashes
         new_path = argument[0] == '/' ? argument : WORKING_DIR + '/' + argument;
     }
 
-    if (std::filesystem::exists(new_path) && std::filesystem::is_directory(new_path)) {
-        std::filesystem::current_path(new_path);
-        WORKING_DIR = std::filesystem::current_path().string(); // Update the working directory variable
-    } else {
-        std::cout << argument << ": No such file or directory\n";
+    try {
+        if (std::filesystem::exists(new_path) && std::filesystem::is_directory(new_path)) {
+            std::filesystem::current_path(new_path);
+            WORKING_DIR = std::filesystem::current_path().string();
+        } else {
+            std::cout << argument << ": No such file or directory\n";
+        }
+    } catch (const std::filesystem::filesystem_error& e) {
+        std::cout << "Error changing directory: " << e.what() << "\n";
     }
 }
-
 
 void handle_type_command(const std::vector<std::string> &args, const std::vector<std::string> &path) {
     if (args[1] == "echo" || args[1] == "exit" || args[1] == "type" || args[1] == "pwd") {
@@ -117,12 +124,19 @@ int main() {
         if (input.empty()) continue;
 
         std::vector<std::string> args = split_string(input, ' ');
+        if (args.empty()) continue;
 
         if (args[0] == "exit" && args.size() > 1 && args[1] == "0") break;
 
         if (args[0] == "echo") {
             for (size_t i = 1; i < args.size(); ++i) {
-                std::cout << args[i] << (i == args.size() - 1 ? "\n" : " ");
+                // Remove surrounding quotes if they exist
+                std::string arg = args[i];
+                if ((arg.front() == '"' && arg.back() == '"') || 
+                    (arg.front() == '\'' && arg.back() == '\'')) {
+                    arg = arg.substr(1, arg.length() - 2);
+                }
+                std::cout << arg << (i == args.size() - 1 ? "\n" : " ");
             }
         } else if (args[0] == "pwd") {
             std::cout << WORKING_DIR << "\n";
@@ -134,11 +148,17 @@ int main() {
             // Check if first token is a quoted executable
             std::string executable = args[0];
             
+            // Remove surrounding quotes from executable
+            if ((executable.front() == '"' && executable.back() == '"') || 
+                (executable.front() == '\'' && executable.back() == '\'')) {
+                executable = executable.substr(1, executable.length() - 2);
+            }
+
             for (const auto &dir : path) {
                 std::string filepath = dir + '/' + executable;
                 if (std::ifstream(filepath).good()) {
                     // Reconstruct command with original spaces and quotes
-                    std::string command = filepath + input.substr(executable.length());
+                    std::string command = filepath + input.substr(args[0].length());
                     std::system(command.c_str());
                     goto next_command;
                 }
