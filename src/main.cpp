@@ -20,11 +20,10 @@ std::vector<std::string> split_string(const std::string &s, char delimiter) {
         char c = s[i];
 
         if (in_double_quote && escape_next) {
-            // In double quotes, handle specific escaped characters
+            // In double quotes, handle escaped characters
             if (c == '\\' || c == '$' || c == '"' || c == '\n') {
                 current_token += c;
             } else {
-                // If not a special character in double quotes, preserve the backslash
                 current_token += '\\';
                 current_token += c;
             }
@@ -55,6 +54,10 @@ std::vector<std::string> split_string(const std::string &s, char delimiter) {
         else if (c == '"' && !in_single_quote) {
             // Toggle double quote mode
             in_double_quote = !in_double_quote;
+            if (!in_double_quote) {
+                // When closing double quote, don't add the quote
+                continue;
+            }
             current_token += c;
             continue;
         }
