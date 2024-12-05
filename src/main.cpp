@@ -1,14 +1,3 @@
-#include <iostream>
-#include <cstdlib>
-#include <sstream>
-#include <vector>
-#include <fstream>
-#include <filesystem>
-
-using namespace std;
-
-std::string WORKING_DIR = std::filesystem::current_path().string();
-
 std::vector<std::string> split_string(const std::string &s, char delimiter) {
     std::vector<std::string> tokens;
     std::string current_token;
@@ -62,48 +51,6 @@ std::vector<std::string> split_string(const std::string &s, char delimiter) {
     }
 
     return tokens;
-}
-
-
-void handleCd(const std::string& argument) {
-    std::filesystem::path new_path;
-
-    if (argument == "~") {
-        // Change to the user's home directory
-        const char* home = std::getenv("HOME");
-        if (home) {
-            new_path = home;
-        } else {
-            std::cout << "HOME environment variable is not set.\n";
-            return;
-        }
-    } else {
-        // Handle absolute and relative paths
-        new_path = argument[0] == '/' ? argument : WORKING_DIR + '/' + argument;
-    }
-
-    if (std::filesystem::exists(new_path) && std::filesystem::is_directory(new_path)) {
-        std::filesystem::current_path(new_path);
-        WORKING_DIR = std::filesystem::current_path().string(); // Update the working directory variable
-    } else {
-        std::cout << argument << ": No such file or directory\n";
-    }
-}
-
-
-void handle_type_command(const std::vector<std::string> &args, const std::vector<std::string> &path) {
-    if (args[1] == "echo" || args[1] == "exit" || args[1] == "type" || args[1] == "pwd") {
-        std::cout << args[1] << " is a shell builtin\n";
-        return;
-    }
-    for (const auto &dir : path) {
-        std::string filepath = dir + '/' + args[1];
-        if (std::ifstream(filepath).good()) {
-            std::cout << args[1] << " is " << filepath << "\n";
-            return;
-        }
-    }
-    std::cout << args[1] << ": not found\n";
 }
 
 int main() {
