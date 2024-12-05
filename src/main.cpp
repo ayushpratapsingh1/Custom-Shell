@@ -19,18 +19,29 @@ std::vector<std::string> split_string(const std::string &s, char delimiter) {
     for (size_t i = 0; i < s.length(); ++i) {
         char c = s[i];
 
-        if (escape_next) {
-            // Always add the escaped character literally
-            current_token += c;
+        if (in_double_quote && escape_next) {
+            // In double quotes, handle specific escaped characters
+            if (c == '\\' || c == '$' || c == '"' || c == '\n') {
+                current_token += c;
+            } else {
+                // If not a special character in double quotes, preserve the backslash
+                current_token += '\\';
+                current_token += c;
+            }
             escape_next = false;
             continue;
         }
 
         if (c == '\\') {
-            // Prepare to escape the next character, even within quotes
-            escape_next = true;
-            if (in_single_quote || in_double_quote) {
+            // Prepare to escape the next character
+            if (in_double_quote) {
+                escape_next = true;
+            } else if (in_single_quote) {
+                // In single quotes, backslash is literal
                 current_token += c;
+            } else {
+                // Outside quotes, backslash escapes next character
+                escape_next = true;
             }
             continue;
         }
@@ -57,7 +68,12 @@ std::vector<std::string> split_string(const std::string &s, char delimiter) {
         }
         else {
             // Always add character when in quotes or not a delimiter
-            current_token += c;
+            if (escape_next) {
+                current_token += c;
+                escape_next = false;
+            } else {
+                current_token += c;
+            }
         }
     }
 
