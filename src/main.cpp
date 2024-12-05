@@ -64,7 +64,6 @@ std::vector<std::string> split_string(const std::string &s, char delimiter) {
     return tokens;
 }
 
-
 void handleCd(const std::string& argument) {
     std::filesystem::path new_path;
 
