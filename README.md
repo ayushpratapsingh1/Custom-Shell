@@ -1,34 +1,69 @@
-[![progress-banner](https://backend.codecrafters.io/progress/shell/a5b85ebf-df37-4fe9-b5c2-c28be79b0763)](https://app.codecrafters.io/users/codecrafters-bot?r=2qF)
 
-This is a starting point for C++ solutions to the
-["Build Your Own Shell" Challenge](https://app.codecrafters.io/courses/shell/overview).
+# Custom Shell in C++
 
-In this challenge, you'll build your own POSIX compliant shell that's capable of
-interpreting shell commands, running external programs and builtin commands like
-cd, pwd, echo and more. Along the way, you'll learn about shell command parsing,
-REPLs, builtin commands, and more.
+## Overview  
+This project is a **Custom Shell** implemented in **C++**, designed to emulate the core functionalities of a Unix-like shell. It handles **command parsing, execution, directory navigation, and built-in commands** such as `cd`, `pwd`, and `echo`, with proper handling of special characters, quotes, and escape sequences.  
 
-**Note**: If you're viewing this repo on GitHub, head over to
-[codecrafters.io](https://codecrafters.io) to try the challenge.
+## Features  
+- **Command Parsing**  
+  - Supports single (`'`) and double (`"`) quotes.  
+  - Handles escaped characters like `\` for special symbols and spaces.  
+  - Splits input commands into arguments based on spaces while respecting quoted and escaped inputs.  
 
-# Passing the first stage
+- **Built-in Commands**  
+  - `cd <path>`: Change the current working directory.  
+  - `pwd`: Display the current working directory.  
+  - `echo <args>`: Print arguments to the shell output.  
+  - `type <command>`: Identify whether a command is built-in or executable and locate its file path.  
 
-The entry point for your `shell` implementation is in `src/main.cpp`. Study and
-uncomment the relevant code, and push your changes to pass the first stage:
+- **Command Execution**  
+  - Searches executable files in system `PATH`.  
+  - Executes external commands using `std::system`.  
+  - Gracefully handles errors like "command not found" or invalid paths.  
 
-```sh
-git commit -am "pass 1st stage" # any msg
-git push origin master
-```
+## How It Works  
+1. **Input Parsing**  
+   The shell uses a robust parser to tokenize the input command, accounting for special characters, quotes, and escape sequences.  
+   
+2. **Execution Flow**  
+   - For recognized built-in commands, appropriate functions are called.  
+   - For external commands, the shell searches directories in the `PATH` environment variable and executes the command if found.  
 
-Time to move on to the next stage!
+3. **Directory Management**  
+   - Implements directory navigation using the `std::filesystem` library.  
+   - Supports relative paths, absolute paths, and user home directory shortcuts (`~`).  
 
-# Stage 2 & beyond
+## Example Usage  
+    ```
+      $ pwd
+      /home/user/projects/shell
+      $ cd ..
+      $ pwd
+      /home/user/projects
+      $ echo "Hello, World!"
+      Hello, World!
+      $ type echo
+      echo is a shell builtin
+      $ type ls
+      ls is /usr/bin/ls
 
-Note: This section is for stages 2 and beyond.
+## Requirements
+- C++17 or later
+- Compiler with support for the std::filesystem library
 
-1. Ensure you have `cmake` installed locally
-1. Run `./your_program.sh` to run your program, which is implemented in
-   `src/main.cpp`.
-1. Commit your changes and run `git push origin master` to submit your solution
-   to CodeCrafters. Test output will be streamed to your terminal.
+## Compilation
+To compile the shell:
+    ```
+    g++ -std=c++17 main.cpp -o shell
+    ```
+
+## Running the Shell
+Run the compiled binary:
+    ```
+     ./shell
+    ```
+
+## Future Enhancements
+- Add support for command piping (|) and redirection (>/<).
+- Implement job control (bg, fg, jobs commands).
+- Expand support for environment variable management.
